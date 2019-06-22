@@ -6,8 +6,7 @@ import java.util.List;
 public class Receipt {
 
     public Receipt() {
-        tax = new BigDecimal(0.1);
-        tax = tax.setScale(2, BigDecimal.ROUND_HALF_UP);
+        tax = transDoubleToDecimal(0.1);
     }
 
     private BigDecimal tax;
@@ -15,21 +14,12 @@ public class Receipt {
     public double CalculateGrandTotal(List<Product> products, List<OrderItem> items) {
         BigDecimal subTotal = calculateSubtotal(products, items);
 
-        for (Product product : products) {
-            OrderItem curItem = findOrderItemByProduct(items, product);
+        subTotal = SubtractDiscounts(products, items, subTotal);
 
-            BigDecimal reducedPrice = product.getPrice()
-                    .multiply(product.getDiscountRate())
-                    .multiply(new BigDecimal(curItem.getCount()));
+        BigDecimal grandTotal = addTax(subTotal);
 
-            subTotal = subTotal.subtract(reducedPrice);
-        }
-        BigDecimal taxTotal = subTotal.multiply(tax);
-        BigDecimal grandTotal = subTotal.add(taxTotal);
-
-        return grandTotal.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
+        return transDecimalToDouble(grandTotal);
     }
-
 
     private OrderItem findOrderItemByProduct(List<OrderItem> items, Product product) {
         OrderItem curItem = null;
@@ -48,6 +38,46 @@ public class Receipt {
             OrderItem item = findOrderItemByProduct(items, product);
             BigDecimal itemTotal = product.getPrice().multiply(new BigDecimal(item.getCount()));
             subTotal = subTotal.add(itemTotal);
+        }
+        return subTotal;
+    }
+
+    private BigDecimal transDoubleToDecimal(double doubleNum) {
+        BigDecimal decimal = new BigDecimal(doubleNum);
+        return decimal.setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+
+    private double transDecimalToDouble(BigDecimal decimal) {
+        return decimal.doubleValue();
+    }
+
+
+    /**
+     * 加上税钱
+     * @param subTotal
+     * @return
+     */
+    private BigDecimal addTax(BigDecimal subTotal) {
+        BigDecimal taxTotal = subTotal.multiply(tax);
+        return subTotal.add(taxTotal);
+    }
+
+    /**
+     * 减去折扣
+     * @param products
+     * @param items
+     * @param subTotal
+     * @return
+     */
+    private BigDecimal SubtractDiscounts(List<Product> products, List<OrderItem> items, BigDecimal subTotal) {
+        for (Product product : products) {
+            OrderItem curItem = findOrderItemByProduct(items, product);
+
+            BigDecimal reducedPrice = product.getPrice()
+                    .multiply(product.getDiscountRate())
+                    .multiply(new BigDecimal(curItem.getCount()));
+
+            subTotal = subTotal.subtract(reducedPrice);
         }
         return subTotal;
     }

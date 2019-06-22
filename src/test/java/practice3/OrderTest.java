@@ -25,7 +25,7 @@ public class OrderTest {
         Order order = new Order(orderLineItemList, discounts);
 
         //When
-        BigDecimal total = order.calculate();
+        BigDecimal total = new PriceCaculator(order).calculate();
         BigDecimal expectedTotal = new BigDecimal(178.2);
 
         //Then
